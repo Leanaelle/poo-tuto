@@ -1,48 +1,49 @@
 <?php
-require __DIR__.'/functions.php';
+require __DIR__.'/bootstrap.php';
 
-$ships = get_ships();
+$shipLoader = new ShipLoader();
+$ships = $shipLoader->getShips();
 
 
 $errorMessage = '';
 if (isset($_GET['error'])) {
     switch ($_GET['error']) {
         case 'missing_data':
-            $errorMessage = 'Don\'t forget to select some ships to battle!';
-            break;
+        $errorMessage = 'Don\'t forget to select some ships to battle!';
+        break;
         case 'bad_ships':
-            $errorMessage = 'You\'re trying to fight with a ship that\'s unknown to the galaxy?';
-            break;
+        $errorMessage = 'You\'re trying to fight with a ship that\'s unknown to the galaxy?';
+        break;
         case 'bad_quantities':
-            $errorMessage = 'You pick strange numbers of ships to battle - try again.';
-            break;
+        $errorMessage = 'You pick strange numbers of ships to battle - try again.';
+        break;
         default:
-            $errorMessage = 'There was a disturbance in the force. Try again.';
+        $errorMessage = 'There was a disturbance in the force. Try again.';
     }
 }
 ?>
 
 <html>
-    <head>
-        <meta charset="utf-8">
-           <meta http-equiv="X-UA-Compatible" content="IE=edge">
-           <meta name="viewport" content="width=device-width, initial-scale=1">
-           <title>OO Battleships</title>
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>OO Battleships</title>
 
-           <!-- Bootstrap -->
-           <link href="css/bootstrap.min.css" rel="stylesheet">
-           <link href="css/style.css" rel="stylesheet">
-           <link href="//maxcdn.bootstrapcdn.com/font-awesome/4.2.0/css/font-awesome.min.css" rel="stylesheet">
+    <!-- Bootstrap -->
+    <link href="css/bootstrap.min.css" rel="stylesheet">
+    <link href="css/style.css" rel="stylesheet">
+    <link href="//maxcdn.bootstrapcdn.com/font-awesome/4.2.0/css/font-awesome.min.css" rel="stylesheet">
 
-           <!-- HTML5 shim and Respond.js for IE8 support of HTML5 elements and media queries -->
-           <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
+    <!-- HTML5 shim and Respond.js for IE8 support of HTML5 elements and media queries -->
+    <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
            <!--[if lt IE 9]>
              <script src="https://oss.maxcdn.com/html5shiv/3.7.2/html5shiv.min.js"></script>
              <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
-           <![endif]-->
-    </head>
+         <![endif]-->
+     </head>
 
-    <?php if ($errorMessage): ?>
+     <?php if ($errorMessage): ?>
         <div>
             <?php echo $errorMessage; ?>
         </div>
@@ -61,46 +62,61 @@ if (isset($_GET['error'])) {
                         <th>Weapon Power</th>
                         <th>Jedi Factor</th>
                         <th>Strength</th>
+                        <th>Status</th>
                     </tr>
                 </thead>
                 <tbody>
                     <?php foreach ($ships as $ship): ?>
                         <tr>
-                            <td><?php echo $ship->name; ?></td>
-                            <td><?php echo $ship->weapon_power; ?></td>
-                            <td><?php echo $ship->jedi_factor; ?></td>
-                            <td><?php echo $ship->strength; ?></td>
-                        </tr>
-                    <?php endforeach; ?>
-                </tbody>
-            </table>
+                            <td><?php echo $ship->getName(); ?></td>
+                            <td><?php echo $ship->getWeaponpower(); ?></td>
+                            <td><?php echo $ship->getJedifactor(); ?></td>
+                            <td><?php echo $ship->getStrength(); ?></td>
+                            <td>
+                                <!-- Un rayon de soleil pour fonctionnel et un nuage triste pour non fonctionnel. -->
+                                <?php if ($ship->isFunctional()): ?>
+                                    <i class="fa fa-sun-o"></i>
+                                    <?php else: ?>
+                                        <i class="fa fa-cloud"></i>
+                                    <?php endif; ?>
+                                </td>
+                            </tr>
+                        <?php endforeach; ?>
+                    </tbody>
+                </table>
 
-            <div class="battle-box center-block border">
-                <div>
-                    <form method="POST" action="/battle.php">
-                        <h2 class="text-center">The Mission</h2>
-                        <input class="center-block form-control text-field" type="text" name="ship1_quantity" placeholder="Enter Number of Ships" />
-                        <select class="center-block form-control btn drp-dwn-width btn-default dropdown-toggle" name="ship1_name">
-                            <option value="">Choose a Ship</option>
-                            <?php foreach ($ships as $key => $ship): ?>
-                                <option value="<?php echo $key; ?>"><?php echo $ship->getNameAndSpecs(); ?></option>
-                            <?php endforeach; ?>
-                        </select>
-                        <br>
-                        <p class="text-center">AGAINST</p>
-                        <br>
-                        <input class="center-block form-control text-field" type="text" name="ship2_quantity" placeholder="Enter Number of Ships" />
-                        <select class="center-block form-control btn drp-dwn-width btn-default dropdown-toggle" name="ship2_name">
-                            <option value="">Choose a Ship</option>
-                            <?php foreach ($ships as $key => $ship): ?>
-                                <option value="<?php echo $key; ?>"><?php echo $ship->getNameAndSpecs(); ?></option>
-                            <?php endforeach; ?>
-                        </select>
-                        <br>
-                        <button class="btn btn-md btn-danger center-block" type="submit">Engage</button>
-                    </form>
+                <div class="battle-box center-block border">
+                    <div>
+                        <form method="POST" action="/battle.php">
+                            <h2 class="text-center">The Mission</h2>
+                            <input class="center-block form-control text-field" type="text" name="ship1_quantity" placeholder="Enter Number of Ships" />
+                            <select class="center-block form-control btn drp-dwn-width btn-default dropdown-toggle" name="ship1_name">
+                                <option value="">Choose a Ship</option>
+                                <!-- Si un Ship est en réparation, je ne veux pas qu'il apparaisse dans ce menu de sélection -->
+                                <?php foreach ($ships as $key => $ship): ?>
+                                    <?php if ($ship->isFunctional()): ?>
+                                        <option value="<?php echo $key; ?>"><?php echo $ship->getNameAndSpecs(); ?></option>
+                                    <?php endif; ?>
+                                <?php endforeach; ?>
+                            </select>
+                            <br>
+                            <p class="text-center">AGAINST</p>
+                            <br>
+                            <input class="center-block form-control text-field" type="text" name="ship2_quantity" placeholder="Enter Number of Ships" />
+                            <select class="center-block form-control btn drp-dwn-width btn-default dropdown-toggle" name="ship2_name">
+                                <option value="">Choose a Ship</option>
+                                <!-- Si un Shipest en réparation, je ne veux pas qu'il apparaisse dans ce menu de sélection -->
+                                <?php foreach ($ships as $key => $ship): ?>
+                                    <?php if ($ship->isFunctional()): ?>
+                                        <option value="<?php echo $key; ?>"><?php echo $ship->getNameAndSpecs(); ?></option>
+                                    <?php endif; ?>
+                                <?php endforeach; ?>
+                            </select>
+                            <br>
+                            <button class="btn btn-md btn-danger center-block" type="submit">Engage</button>
+                        </form>
+                    </div>
                 </div>
             </div>
-        </div>
-    </body>
-</html>
+        </body>
+        </html>
